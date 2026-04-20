@@ -1,0 +1,295 @@
+        <!-- Flatpickr Dependencies -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+
+    <!-- Formulario de Reserva -->
+    <section id="reserva" class="py-16 bg-negro min-h-[80vh] flex items-center">
+        <div class="container mx-auto px-4">
+            <h2 class="text-3xl font-bold text-dorado mb-10 text-center section-title">RESERVA TU HORA</h2>
+            
+            <div class="max-w-lg mx-auto bg-gris-oscuro p-8 rounded-xl border border-gris-borde shadow-[0_0_20px_rgba(212,175,55,0.1)] relative overflow-hidden">
+                <!-- Decoración de fondo -->
+                <div class="absolute top-0 right-0 w-20 h-20 bg-dorado/5 rounded-bl-full"></div>
+                <div class="absolute bottom-0 left-0 w-20 h-20 bg-dorado/5 rounded-tr-full"></div>
+
+                <form id="reservationForm" class="space-y-6 relative z-10">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="col-span-2">
+                            <label for="name" class="block text-dorado text-sm font-bold mb-2"><i class="fas fa-user mr-2"></i>Nombre Completo</label>
+                            <input type="text" id="name" required class="w-full p-3 rounded bg-negro border border-gris-borde text-white focus:border-dorado focus:ring-1 focus:ring-dorado transition-all outline-none placeholder-gray-600" placeholder="Ej: Juan Pérez">
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="phone" class="block text-dorado text-sm font-bold mb-2"><i class="fas fa-phone mr-2"></i>Teléfono</label>
+                            <input type="tel" id="phone" required class="w-full p-3 rounded bg-negro border border-gris-borde text-white focus:border-dorado focus:ring-1 focus:ring-dorado transition-all outline-none placeholder-gray-600" placeholder="+56 9...">
+                        </div>
+                        <div class="col-span-2 md:col-span-1">
+                            <label for="service" class="block text-dorado text-sm font-bold mb-2"><i class="fas fa-cut mr-2"></i>Servicio</label>
+                            <select id="service" required class="w-full p-3 rounded bg-negro border border-gris-borde text-white focus:border-dorado focus:ring-1 focus:ring-dorado transition-all outline-none appearance-none cursor-pointer">
+                                <option value="">Seleccionar...</option>
+                                <option value="corte">Corte de Pelo</option>
+                                <option value="barba">Perfilado de Barba</option>
+                                <option value="cejas">Perfilado de Cejas</option>
+                                <option value="visos">Visos</option>
+                                <option value="permanente">Permanentes</option>
+                                <option value="combo">Corte + Barba</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Selección de Fecha y Hora Modernizada -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-dorado text-sm font-bold mb-2"><i class="far fa-calendar-alt mr-2"></i>Selecciona una Fecha</label>
+                            <input type="text" id="datePicker" class="w-full p-3 rounded bg-negro border border-gris-borde text-white focus:border-dorado focus:ring-1 focus:ring-dorado transition-all outline-none placeholder-gray-500 cursor-pointer" placeholder="Seleccionar fecha...">
+                            <input type="hidden" id="day" name="day" required>
+                        </div>
+
+                        <div>
+                            <label class="block text-dorado text-sm font-bold mb-2"><i class="far fa-clock mr-2"></i>Horarios Disponibles</label>
+                            <div id="timeSlotsContainer" class="grid grid-cols-3 sm:grid-cols-4 gap-3 min-h-[60px]">
+                                <div class="col-span-full text-center text-gray-500 italic py-2">Selecciona una fecha para ver horarios</div>
+                            </div>
+                            <input type="hidden" id="time" name="time" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full bg-dorado text-negro font-bold py-4 rounded-lg hover:bg-dorado-oscuro hover:shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all transform hover:-translate-y-0.5 mt-6 text-lg uppercase tracking-wider">
+                        Confirmar Reserva
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal Personalizado -->
+    <div id="successModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-gris-oscuro p-8 rounded-xl border border-dorado shadow-[0_0_30px_rgba(212,175,55,0.2)] max-w-md w-full mx-4 text-center transform scale-100 transition-transform duration-300">
+            <div class="w-16 h-16 bg-dorado/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-check text-3xl text-dorado"></i>
+            </div>
+            <h3 class="text-2xl font-bold text-white mb-2">¡Reserva Exitosa!</h3>
+            <p id="modalMessage" class="text-gray-300 mb-6">Tu cita ha sido agendada.</p>
+            <button onclick="closeModal()" class="bg-dorado hover:bg-yellow-600 text-negro font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+<script type="module">
+    // Funciones del Modal
+    function showModal(title, message, isSuccess = true) {
+        const modal = document.getElementById('successModal');
+        const modalMsg = document.getElementById('modalMessage');
+        const modalTitle = modal.querySelector('h3');
+        const iconContainer = modal.querySelector('.w-16');
+        const icon = iconContainer.querySelector('i');
+
+        // Guardamos el estado de éxito en el modal
+        modal.dataset.isSuccess = isSuccess;
+
+        modalMsg.innerText = message;
+        modalTitle.innerText = title;
+        
+        const contentDiv = modal.querySelector('.bg-gris-oscuro'); // Selector más robusto
+
+        if (isSuccess) {
+            icon.className = 'fas fa-check text-3xl text-dorado';
+            iconContainer.className = 'w-16 h-16 bg-dorado/10 rounded-full flex items-center justify-center mx-auto mb-4';
+            contentDiv.classList.remove('border-red-500');
+            contentDiv.classList.add('border-dorado');
+        } else {
+            icon.className = 'fas fa-times text-3xl text-red-500';
+            iconContainer.className = 'w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4';
+            contentDiv.classList.remove('border-dorado');
+            contentDiv.classList.add('border-red-500');
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeModal() {
+        const modal = document.getElementById('successModal');
+        
+        // Si fue exitoso, redirigir al inicio
+        if (modal.dataset.isSuccess === 'true') {
+            window.location.href = "{% url 'index' %}";
+        } else {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+    
+    // Hacemos la función accesible globalmente para el onclick del HTML
+    window.closeModal = closeModal;
+
+    // Configuración de Flatpickr y Lógica de Disponibilidad
+    const dateInput = document.getElementById('datePicker');
+    const timeInput = document.getElementById('time');
+    const dayInput = document.getElementById('day'); // Hidden input para compatibilidad
+    const timeSlotsContainer = document.getElementById('timeSlotsContainer');
+    
+    const availableHours = [
+        "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", 
+        "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
+    ];
+
+    // Inicializar Flatpickr
+    flatpickr(dateInput, {
+        locale: "es",
+        minDate: "today",
+        dateFormat: "Y-m-d",
+        disable: [
+            function(date) {
+                // Opcional: Deshabilitar domingos si el negocio cierra
+                // return (date.getDay() === 0); 
+                return false;
+            }
+        ],
+        onChange: async function(selectedDates, dateStr, instance) {
+            if (!dateStr) return;
+            
+            // Guardar fecha en input oculto para el envío
+            dayInput.value = dateStr;
+            
+            // Resetear hora seleccionada
+            timeInput.value = "";
+            
+            // Mostrar estado de carga
+            timeSlotsContainer.innerHTML = '<div class="col-span-full text-center text-dorado py-4"><i class="fas fa-spinner fa-spin mr-2"></i>Verificando disponibilidad...</div>';
+
+            try {
+                const response = await fetch(`/api/reservas/ocupadas/?dia=${dateStr}`);
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    if (data.bloqueado) {
+                        // Mostrar mensaje de día bloqueado
+                        timeSlotsContainer.innerHTML = `
+                            <div class="col-span-full text-center py-6 bg-red-900/20 border border-red-900/50 rounded-lg animate-fade-in">
+                                <i class="fas fa-calendar-times text-3xl text-red-500 mb-3"></i>
+                                <p class="text-red-400 font-bold text-lg">${data.mensaje || 'No hay disponibilidad'}</p>
+                                <p class="text-gray-400 text-sm mt-1">Por favor selecciona otra fecha en el calendario.</p>
+                            </div>
+                        `;
+                    } else {
+                        renderTimeSlots(data.horas_ocupadas);
+                    }
+                } else {
+                    timeSlotsContainer.innerHTML = '<div class="col-span-full text-center text-red-500 py-4">Error al cargar disponibilidad.</div>';
+                }
+                
+            } catch (error) {
+                console.error("Error al obtener horarios:", error);
+                timeSlotsContainer.innerHTML = '<div class="col-span-full text-center text-red-500 py-4">Error de conexión. Intenta nuevamente.</div>';
+            }
+        }
+    });
+
+    function renderTimeSlots(occupiedHours) {
+        timeSlotsContainer.innerHTML = '';
+        
+        availableHours.forEach(hour => {
+            const isOccupied = occupiedHours.includes(hour);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `
+                p-3 rounded-lg text-sm font-bold transition-all duration-200 border
+                ${isOccupied 
+                    ? 'bg-red-900/20 border-red-900 text-red-500 cursor-not-allowed opacity-50' 
+                    : 'bg-negro border-gris-borde text-white hover:border-dorado hover:text-dorado hover:shadow-[0_0_10px_rgba(212,175,55,0.2)]'}
+            `;
+            btn.innerText = hour;
+            btn.disabled = isOccupied;
+            
+            if (!isOccupied) {
+                btn.onclick = () => selectTime(btn, hour);
+            }
+            
+            timeSlotsContainer.appendChild(btn);
+        });
+    }
+
+    function selectTime(btn, hour) {
+        // Remover clase activa de otros botones
+        const buttons = timeSlotsContainer.querySelectorAll('button');
+        buttons.forEach(b => {
+            if (!b.disabled) {
+                b.className = 'p-3 rounded-lg text-sm font-bold transition-all duration-200 border bg-negro border-gris-borde text-white hover:border-dorado hover:text-dorado hover:shadow-[0_0_10px_rgba(212,175,55,0.2)]';
+            }
+        });
+        
+        // Activar este botón
+        btn.className = 'p-3 rounded-lg text-sm font-bold transition-all duration-200 border bg-dorado border-dorado text-negro shadow-[0_0_15px_rgba(212,175,55,0.4)] transform scale-105';
+        
+        // Guardar valor en input oculto
+        timeInput.value = hour;
+    }
+
+    document.getElementById('reservationForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const btn = document.getElementById('submitBtn');
+        const originalText = btn.innerText;
+        
+        // Validar que se haya seleccionado hora
+        const time = document.getElementById('time').value;
+        if (!time) {
+            showModal('Faltan Datos', 'Por favor selecciona una hora disponible.', false);
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerText = 'Procesando...';
+
+        // Obtener datos
+        const name = document.getElementById('name').value;
+        const phone = document.getElementById('phone').value;
+        const day = document.getElementById('day').value;
+        const service = document.getElementById('service').value;
+
+        try {
+            // Enviamos los datos a nuestra API Django
+            const response = await fetch('/api/reservas/crear/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    nombre: name,
+                    telefono: phone,
+                    dia: day,
+                    hora: time,
+                    servicio: service
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showModal('¡Reserva Confirmada!', `Gracias ${name}, te esperamos el ${day} a las ${time} para tu ${service}.`, true);
+                document.getElementById('reservationForm').reset();
+                
+                // Resetear UI personalizada
+                if(document.getElementById('datePicker')._flatpickr) {
+                    document.getElementById('datePicker')._flatpickr.clear();
+                }
+                timeSlotsContainer.innerHTML = '<div class="col-span-full text-center text-gray-500 italic py-2">Selecciona una fecha para ver horarios</div>';
+                document.getElementById('time').value = "";
+                document.getElementById('day').value = "";
+                
+            } else {
+                showModal('Hubo un problema', (data.message || 'Error al procesar la reserva'), false);
+            }
+
+        } catch (error) {
+            console.error("Error al reservar: ", error);
+            showModal('Error de Conexión', 'No pudimos conectar con el servidor. Intenta nuevamente.', false);
+        } finally {
+            btn.disabled = false;
+            btn.innerText = originalText;
+        }
+    });
+</script>

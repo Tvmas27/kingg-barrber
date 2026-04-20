@@ -1,0 +1,304 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+  <!-- Hero Section -->
+  <section class="relative h-[80vh] flex items-center justify-center text-center px-4 bg-cover bg-center" style="background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://images.unsplash.com/photo-1585747860715-2ba37e788b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');">
+    <div class="max-w-3xl w-full z-10">
+      <div class="w-48 md:w-64 mx-auto mb-6 rounded-lg overflow-hidden shadow-[0_5px_15px_rgba(212,175,55,0.3)]">
+        <img src="{% static 'img/logobarbero.jpg' %}" onerror="this.src='https://via.placeholder.com/300x300?text=KIING+BARBER'" alt="KIING BARBER" class="w-full h-auto" />
+      </div>
+      <h2 class="text-4xl md:text-5xl font-bold mb-6 text-blanco text-shadow">ESTILO MODA Y CALIDAD EN CADA CORTE</h2>
+      <p class="text-lg md:text-xl mb-8 text-gray-200">Reserva tu cita en KIING BARBER y obten un cambio en tu imagen</p>
+      <div class="flex flex-col sm:flex-row justify-center gap-4">
+        <a href="#reserva" class="inline-block bg-dorado text-negro px-8 py-3 rounded font-bold text-lg hover:bg-dorado-oscuro transition-colors">Reservar Hora</a>
+        <a href="https://maps.app.goo.gl/8xHeZxFpJ8HptbKKA" target="_blank" class="inline-block bg-transparent border-2 border-dorado text-dorado px-8 py-3 rounded font-bold text-lg hover:bg-dorado hover:text-negro transition-colors"><i class="fas fa-map-marker-alt mr-2"></i> Ver Ubicación</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección de Horas Disponibles -->
+  <section id="horas" class="py-16 bg-negro text-center">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-dorado mb-10 section-title">PRÓXIMOS DÍAS</h2>
+
+      <div id="days-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <!-- Cargando... -->
+        <div class="col-span-full text-center text-gray-500">
+          <i class="fas fa-spinner fa-spin mr-2"></i> Cargando disponibilidad...
+        </div>
+      </div>
+
+      <p class="text-gray-400 mb-6">Selecciona un horario y completa el formulario para reservar tu cita</p>
+      <button onclick="showCancelModal()" class="mt-4 px-8 py-3 border-2 border-dorado text-dorado rounded-full font-bold hover:bg-dorado hover:text-negro transition-all duration-300 transform hover:scale-105 shadow-[0_0_15px_rgba(212,175,55,0.2)] hover:shadow-[0_0_25px_rgba(212,175,55,0.4)]">
+        <i class="fas fa-calendar-times mr-2"></i>Cancelar Reserva
+      </button>
+    </div>
+  </section>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const container = document.getElementById('days-container')
+      const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    
+      // Horarios base
+      const schedules = {
+        0: '12:00 - 18:00', // Domingo
+        1: '11:00 - 20:00', // Lunes
+        2: '11:00 - 20:00', // Martes
+        3: '11:00 - 20:00', // Miércoles
+        4: '11:00 - 20:00', // Jueves
+        5: '11:00 - 20:00', // Viernes
+        6: '16:00 - 22:00' // Sábado
+      }
+    
+      try {
+        // Obtener días bloqueados
+        const response = await fetch('/api/reservas/dias-bloqueados/')
+        const data = await response.json()
+        const blockedDays = new Set(data.dias.map((d) => d.dia))
+        const blockedReasons = {}
+        data.dias.forEach((d) => (blockedReasons[d.dia] = d.motivo))
+    
+        container.innerHTML = ''
+    
+        // Generar próximos 7 días
+        const today = new Date()
+    
+        for (let i = 0; i < 7; i++) {
+          const date = new Date(today)
+          date.setDate(today.getDate() + i)
+    
+          const dateStr = date.toISOString().split('T')[0]
+          const dayIndex = date.getDay()
+          const dayName = daysOfWeek[dayIndex]
+          const isBlocked = blockedDays.has(dateStr)
+    
+          // Formato "4 de Diciembre"
+          const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+          const formattedDate = `${date.getDate()} de ${months[date.getMonth()]}`
+    
+          const card = document.createElement('div')
+          card.className = `bg-gris-oscuro border ${isBlocked ? 'border-red-900/50 bg-red-900/10' : 'border-gris-borde hover:border-dorado'} rounded-lg p-4 transition-all duration-300 hover:-translate-y-1`
+    
+          let content = ''
+    
+          if (isBlocked) {
+            content = `
+                                    <h3 class="text-lg text-red-400 mb-1 font-bold">${dayName} <span class="text-sm text-gray-500">(${formattedDate})</span></h3>
+                                    <div class="flex flex-col items-center justify-center h-full min-h-[60px]">
+                                        <span class="text-red-500 font-bold text-sm uppercase"><i class="fas fa-ban mr-1"></i> CERRADO</span>
+                                        <span class="text-xs text-gray-500 mt-1">${blockedReasons[dateStr] || 'No disponible'}</span>
+                                    </div>
+                                `
+          } else {
+            content = `
+                                    <h3 class="text-lg text-dorado mb-1 font-bold">${dayName} <span class="text-sm text-gray-500">(${formattedDate})</span></h3>
+                                    <div class="flex flex-wrap gap-2 justify-center mt-3">
+                                        <div class="time-slot bg-gris-medio px-3 py-1 rounded text-sm text-gray-300 border border-gray-700">
+                                            ${schedules[dayIndex]}
+                                        </div>
+                                    </div>
+                                `
+          }
+    
+          card.innerHTML = content
+          container.appendChild(card)
+        }
+
+        // Tarjeta final para ir al formulario completo
+        const moreCard = document.createElement('div');
+        moreCard.className = 'bg-dorado/10 border border-dorado rounded-lg p-4 transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col items-center justify-center min-h-[120px] group';
+        moreCard.onclick = () => {
+            const section = document.getElementById('reserva');
+            if(section) section.scrollIntoView({ behavior: 'smooth' });
+        };
+        
+        moreCard.innerHTML = `
+            <div class="h-12 w-12 rounded-full bg-dorado flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                <i class="fas fa-calendar-plus text-negro text-xl"></i>
+            </div>
+            <h3 class="text-dorado font-bold text-center text-sm">Consulta todos<br>los horarios aquí</h3>
+        `;
+        container.appendChild(moreCard);
+      } catch (error) {
+        console.error('Error cargando días:', error)
+        container.innerHTML = '<div class="col-span-full text-red-500">No se pudo cargar la disponibilidad.</div>'
+      }
+    })
+  </script>
+
+  <!-- Galería de Cortes -->
+  <section id="galeria" class="py-16 bg-gris-oscuro">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-dorado mb-10 text-center section-title">TRABAJOS</h2>
+
+      <div class="relative max-w-4xl mx-auto rounded-lg overflow-hidden border-2 border-dorado group bg-black">
+        <div class="carousel-track flex transition-transform duration-500 ease-out items-center" id="carousel-track">
+          <div class="min-w-full flex justify-center items-center h-[500px] md:h-[600px]">
+            <img src="{% static 'img/corte1.1.jpg' %}" onerror="this.src='https://via.placeholder.com/1000x600?text=Corte+1'" class="max-w-full max-h-full object-contain" />
+          </div>
+          <div class="min-w-full flex justify-center items-center h-[500px] md:h-[600px]">
+            <img src="{% static 'img/corte2.2.jpg' %}" onerror="this.src='https://via.placeholder.com/1000x600?text=Corte+2'" class="max-w-full max-h-full object-contain" />
+          </div>
+          <div class="min-w-full flex justify-center items-center h-[500px] md:h-[600px]">
+            <img src="{% static 'img/corte3.3.jpg' %}" onerror="this.src='https://via.placeholder.com/1000x600?text=Corte+3'" class="max-w-full max-h-full object-contain" />
+          </div>
+          <div class="min-w-full flex justify-center items-center h-[500px] md:h-[600px]">
+            <img src="{% static 'img/corte4.4.jpg' %}" onerror="this.src='https://via.placeholder.com/1000x600?text=Corte+4'" class="max-w-full max-h-full object-contain" />
+          </div>
+        </div>
+
+        <button class="absolute top-1/2 left-4 -translate-y-1/2 bg-dorado/80 text-negro w-10 h-10 rounded-full flex items-center justify-center hover:bg-dorado transition-colors" id="prev-btn">‹</button>
+        <button class="absolute top-1/2 right-4 -translate-y-1/2 bg-dorado/80 text-negro w-10 h-10 rounded-full flex items-center justify-center hover:bg-dorado transition-colors" id="next-btn">›</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección del Barbero -->
+  <section id="barbero" class="py-16 bg-negro">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-dorado mb-10 text-center section-title">EL BARBERO</h2>
+
+      <div class="flex flex-col lg:flex-row items-center justify-center gap-10 max-w-5xl mx-auto">
+        <div class="flex-1 text-center">
+          <img src="{% static 'img/foto de perfil 2.0.jpg' %}" onerror="this.src='https://via.placeholder.com/600x600?text=Barbero'" alt="Andres" class="w-64 h-64 rounded-full object-cover border-4 border-dorado mx-auto mb-4" />
+          <h3 class="text-2xl text-dorado font-bold">Andres</h3>
+          <p class="text-gray-300">Barbero</p>
+        </div>
+
+        <div class="flex-[2]">
+          <h3 class="text-xl text-dorado font-bold mb-4">Descripción</h3>
+          <p class="text-gray-300 mb-4">Soy barbero profesional y fundador de King.barber, especializado en cortes clásicos y modernos, perfilado de barba y cejas, y asesoría de imagen. Mi enfoque es ofrecer un servicio personalizado para que cada cliente potencie su estilo, confianza y presencia, en un ambiente profesional y cómodo.</p>
+          <p class="text-gray-300 mb-6">¿Quieres potenciar tu imagen y autoestima? Agenda tu hora y da el siguiente paso hacia tu mejor versión.</p>
+
+          <h3 class="text-xl text-dorado font-bold mb-4">Certificaciones</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="group relative overflow-hidden rounded-lg border border-gris-borde hover:border-dorado transition-all duration-300 cursor-pointer">
+              <img src="{% static 'img/certificado1.jpg' %}" alt="Certificado Barbería Inicial" class="w-full h-auto object-contain transform group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <span class="text-dorado font-bold text-lg">Barbería Inicial</span>
+              </div>
+            </div>
+            <div class="group relative overflow-hidden rounded-lg border border-gris-borde hover:border-dorado transition-all duration-300 cursor-pointer">
+              <img src="{% static 'img/certificado2.jpg' %}" alt="Certificado Colorimetría" class="w-full h-auto object-contain transform group-hover:scale-105 transition-transform duration-500" />
+              <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                <span class="text-dorado font-bold text-lg">Colorimetría</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Sección de Servicios -->
+  <section id="servicios" class="py-16 bg-gris-oscuro">
+    <div class="container mx-auto px-4">
+      <h2 class="text-3xl font-bold text-dorado mb-10 text-center section-title">SERVICIOS</h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Corte de Pelo -->
+        <div class="bg-negro border border-gris-borde rounded-lg p-8 text-center hover:-translate-y-2 hover:border-dorado transition-all duration-300">
+          <i class="fas fa-scissors text-4xl text-dorado mb-4"></i>
+          <h3 class="text-xl text-dorado font-bold mb-2">Corte de Pelo</h3>
+          <p class="text-gray-400">Estilo personalizado según tus preferencias y tipo de rostro.</p>
+        </div>
+        
+        <!-- Perfilado de Barba -->
+        <div class="bg-negro border border-gris-borde rounded-lg p-8 text-center hover:-translate-y-2 hover:border-dorado transition-all duration-300">
+          <i class="fas fa-user-tie text-4xl text-dorado mb-4"></i>
+          <h3 class="text-xl text-dorado font-bold mb-2">Perfilado de Barba</h3>
+          <p class="text-gray-400">Diseño y mantenimiento profesional para tu barba.</p>
+        </div>
+
+        <!-- Perfilado de Cejas -->
+        <div class="bg-negro border border-gris-borde rounded-lg p-8 text-center hover:-translate-y-2 hover:border-dorado transition-all duration-300">
+          <i class="fas fa-eye text-4xl text-dorado mb-4"></i>
+          <h3 class="text-xl text-dorado font-bold mb-2">Perfilado de Cejas</h3>
+          <p class="text-gray-400">Definición y limpieza para una mirada perfecta.</p>
+        </div>
+
+        <!-- Visos -->
+        <div class="bg-negro border border-gris-borde rounded-lg p-8 text-center hover:-translate-y-2 hover:border-dorado transition-all duration-300">
+          <i class="fas fa-palette text-4xl text-dorado mb-4"></i>
+          <h3 class="text-xl text-dorado font-bold mb-2">Visos</h3>
+          <p class="text-gray-400">Iluminación y color para darle vida a tu cabello.</p>
+        </div>
+
+        <!-- Permanentes -->
+        <div class="bg-negro border border-gris-borde rounded-lg p-8 text-center hover:-translate-y-2 hover:border-dorado transition-all duration-300">
+          <i class="fas fa-wave-square text-4xl text-dorado mb-4"></i>
+          <h3 class="text-xl text-dorado font-bold mb-2">Permanentes</h3>
+          <p class="text-gray-400">Rizos y ondas definidas con productos de calidad.</p>
+        </div>
+
+        <!-- Corte + Barba -->
+        <div class="bg-negro border border-gris-borde rounded-lg p-8 text-center hover:-translate-y-2 hover:border-dorado transition-all duration-300">
+          <i class="fas fa-crown text-4xl text-dorado mb-4"></i>
+          <h3 class="text-xl text-dorado font-bold mb-2">Corte + Barba</h3>
+          <p class="text-gray-400">El servicio completo para un cambio de look total.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Incluir el formulario aquí para que sea parte de la misma página -->
+  {% include 'core/formulario.html' %}
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    // Carrusel
+    const track = document.getElementById('carousel-track')
+    const slides = Array.from(track.children)
+    let currentIndex = 0
+    
+    function updateCarousel() {
+      track.style.transform = `translateX(-${currentIndex * 100}%)`
+    }
+    
+    document.getElementById('next-btn').addEventListener('click', () => {
+      currentIndex = (currentIndex + 1) % slides.length
+      updateCarousel()
+    })
+    
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      currentIndex = (currentIndex - 1 + slides.length) % slides.length
+      updateCarousel()
+    })
+    
+    // Auto-play carrusel
+    setInterval(() => {
+      currentIndex = (currentIndex + 1) % slides.length
+      updateCarousel()
+    }, 5000)
+    
+    // Selección de Horas (Ahora hace scroll suave al formulario en la misma página)
+    document.querySelectorAll('.time-slot').forEach((slot) => {
+      slot.addEventListener('click', function () {
+        // Reset visual
+        document.querySelectorAll('.time-slot').forEach((s) => {
+          s.classList.remove('bg-dorado', 'text-negro')
+          s.classList.add('bg-gris-medio', 'text-white')
+        })
+    
+        // Activar selección
+        this.classList.remove('bg-gris-medio', 'text-white')
+        this.classList.add('bg-dorado', 'text-negro')
+    
+        // Llenar input del formulario (que ahora está en la misma página)
+        const timeSelect = document.getElementById('time')
+        if (timeSelect) {
+          timeSelect.value = this.textContent.trim()
+        }
+    
+        // Scroll suave al formulario
+        const reservaSection = document.getElementById('reserva')
+        if (reservaSection) {
+          reservaSection.scrollIntoView({ behavior: 'smooth' })
+        }
+      })
+    })
+  </script>
+{% endblock %}

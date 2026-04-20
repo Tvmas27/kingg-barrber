@@ -1,0 +1,303 @@
+from django.shortcuts import render
+from django.http import HttpResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from firebase_admin import firestore
+import csv
+import datetime
+
+def index(request):
+    return render(request, 'core/home.html')
+
+class DashboardDataView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            db = firestore.client()
+            reservas_ref = db.collection('reservas')
+            docs = reservas_ref.stream()
+            
+            reservas = []
+            for doc in docs:
+                data = doc.to_dict()
+                data['id'] = doc.id  # Incluimos el ID del documento
+                # Convertir timestamps a string si es necesario
+                if 'creadoEn' in data:
+                    data['creadoEn'] = str(data['creadoEn'])
+                reservas.append(data)
+                
+            return Response({
+                "status": "success",
+                "count": len(reservas),
+                "reservas": reservas
+            })
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+class ReservaDetailView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, doc_id):
+        try:
+            db = firestore.client()
+            db.collection('reservas').document(doc_id).delete()
+            return Response({"status": "success", "message": "Reserva eliminada"})
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+class CrearReservaView(APIView):
+    permission_classes = [] # Público
+
+    def post(self, request):
+        try:
+            data = request.data
+            # Validación básica
+            required_fields = ['nombre', 'servicio', 'dia', 'hora', 'telefono']
+            for field in required_fields:
+                if field not in data:
+                    return Response({"status": "error", "message": f"Falta el campo {field}"}, status=400)
+            
+            # Limpiar datos (strip whitespace)
+            clean_data = {
+                'nombre': data['nombre'].strip(),
+                'servicio': data['servicio'],
+                'dia': data['dia'],
+                'hora': data['hora'],
+                'telefono': data['telefono'].strip()
+            }
+
+            db = firestore.client()
+            
+            # Verificar si el día está bloqueado
+            bloqueo_ref = db.collection('dias_bloqueados').document(clean_data['dia'])
+            if bloqueo_ref.get().exists:
+                return Response({"status": "error", "message": "Este día no está disponible para reservas."}, status=400)
+
+            reservas_ref = db.collection('reservas')
+
+            # Verificar disponibilidad
+            query = reservas_ref.where('dia', '==', clean_data['dia']).where('hora', '==', clean_data['hora']).stream()
+            if any(query):
+                return Response({"status": "error", "message": "Horario no disponible"}, status=400)
+
+            # Agregar timestamp
+            clean_data['creadoEn'] = firestore.SERVER_TIMESTAMP
+
+            reservas_ref.add(clean_data)
+            
+            return Response({"status": "success", "message": "Reserva creada exitosamente"})
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+class ObtenerHorasOcupadasView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        dia = request.query_params.get('dia')
+        if not dia:
+            return Response({"status": "error", "message": "Falta el parámetro 'dia'"}, status=400)
+        
+        try:
+            db = firestore.client()
+            
+            # Verificar si el día está bloqueado
+            bloqueo_ref = db.collection('dias_bloqueados').document(dia)
+            if bloqueo_ref.get().exists:
+                # Si está bloqueado, devolvemos todas las horas como ocupadas
+                todas_horas = [
+                    "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", 
+                    "17:00", "18:00", "19:00", "20:00", "21:00", "22:00"
+                ]
+                return Response({
+                    "status": "success",
+                    "dia": dia,
+                    "horas_ocupadas": todas_horas,
+                    "bloqueado": True,
+                    "mensaje": "Este día no está disponible."
+                })
+
+            reservas = db.collection('reservas').where('dia', '==', dia).stream()
+            horas_ocupadas = [doc.to_dict().get('hora') for doc in reservas]
+            
+            return Response({
+                "status": "success",
+                "dia": dia,
+                "horas_ocupadas": horas_ocupadas,
+                "bloqueado": False
+            })
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+class CancelarReservaView(APIView):
+    permission_classes = []
+
+    def post(self, request):
+        try:
+            data = request.data
+            nombre = data.get('nombre', '').strip()
+            telefono = data.get('telefono', '').strip()
+            dia = data.get('dia')
+            hora = data.get('hora')
+
+            if not all([nombre, telefono, dia, hora]):
+                return Response({"status": "error", "message": "Faltan datos para cancelar"}, status=400)
+
+            db = firestore.client()
+            # Buscar la reserva por teléfono, día y hora (datos más exactos)
+            reservas = db.collection('reservas')\
+                .where('telefono', '==', telefono)\
+                .where('dia', '==', dia)\
+                .where('hora', '==', hora)\
+                .stream()
+
+            found = False
+            for doc in reservas:
+                doc_data = doc.to_dict()
+                # Verificar nombre (case-insensitive)
+                stored_name = doc_data.get('nombre', '').strip().lower()
+                input_name = nombre.lower()
+
+                if stored_name == input_name:
+                    doc.reference.delete()
+                    found = True
+            
+            if found:
+                return Response({"status": "success", "message": "Reserva cancelada correctamente"})
+            else:
+                return Response({"status": "error", "message": "No encontramos una reserva con esos datos. Verifica que el nombre y teléfono sean correctos."}, status=404)
+
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+class ExportarReservasView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Configurar respuesta CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="reservas_{datetime.date.today()}.csv"'
+
+        writer = csv.writer(response)
+        writer.writerow(['ID', 'Nombre', 'Servicio', 'Día', 'Hora', 'Teléfono', 'Creado En'])
+
+        try:
+            db = firestore.client()
+            reservas = db.collection('reservas').stream()
+
+            for doc in reservas:
+                data = doc.to_dict()
+                writer.writerow([
+                    doc.id,
+                    data.get('nombre', ''),
+                    data.get('servicio', ''),
+                    data.get('dia', ''),
+                    data.get('hora', ''),
+                    data.get('telefono', ''),
+                    data.get('creadoEn', '')
+                ])
+
+        except Exception as e:
+            print(f"Error exportando: {e}")
+            return HttpResponse("Error generando CSV", status=500)
+
+        return response
+
+
+def dashboard_view(request):
+    return render(request, 'core/dashboard.html')
+
+class BloquearDiaView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            dia = request.data.get('dia')
+            motivo = request.data.get('motivo', 'Fuerza mayor')
+            
+            if not dia:
+                return Response({"status": "error", "message": "Falta el día"}, status=400)
+                
+            db = firestore.client()
+            db.collection('dias_bloqueados').document(dia).set({
+                'dia': dia,
+                'motivo': motivo,
+                'bloqueado_por': request.user.username,
+                'fecha_bloqueo': firestore.SERVER_TIMESTAMP
+            })
+            
+            return Response({"status": "success", "message": f"Día {dia} bloqueado correctamente"})
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+    def delete(self, request):
+        try:
+            dia = request.query_params.get('dia') or request.data.get('dia')
+            
+            if not dia:
+                return Response({"status": "error", "message": "Falta el día"}, status=400)
+                
+            db = firestore.client()
+            db.collection('dias_bloqueados').document(dia).delete()
+            
+            return Response({"status": "success", "message": f"Día {dia} desbloqueado"})
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+class ObtenerDiasBloqueadosView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        try:
+            db = firestore.client()
+            docs = db.collection('dias_bloqueados').stream()
+            
+            bloqueados = []
+            for doc in docs:
+                bloqueados.append(doc.to_dict())
+                
+            return Response({"status": "success", "dias": bloqueados})
+        except Exception as e:
+            return Response({"status": "error", "message": str(e)}, status=500)
+
+import os
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth.models import User
+
+class CustomLoginView(APIView):
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        # Credenciales desde variables de entorno (o valores por defecto seguros)
+        admin_user = os.getenv('ADMIN_USER', 'admin')
+        admin_pass = os.getenv('ADMIN_PASS', 'admin123') # ¡Cámbialo en producción!
+
+        if username == admin_user and password == admin_pass:
+            # Crear o recuperar un usuario "dummy" en Django para generar el token
+            # Esto es necesario porque SimpleJWT necesita un objeto User
+            try:
+                user, created = User.objects.get_or_create(username=username)
+                if created:
+                    user.set_unusable_password()
+                    user.save()
+            except Exception:
+                # Si falla la DB (ej. en Heroku sin Postgres), usamos un token manual o simulado
+                # Pero para mantener compatibilidad con el frontend que espera JWT:
+                return Response({
+                    "access": "token-dummy-acceso-permitido",
+                    "refresh": "token-dummy-refresh",
+                    "message": "Login exitoso (Modo Simple)"
+                })
+
+            # Generar token real si la DB funciona
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+            })
+        else:
+            return Response({"detail": "Credenciales incorrectas"}, status=401)
+
+

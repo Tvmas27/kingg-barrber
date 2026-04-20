@@ -1,0 +1,373 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KIING BARBER - Reserva tu Hora{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
+    
+    <!-- Configuración de Tailwind para tus colores exactos -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        negro: '#000000',
+                        blanco: '#ffffff',
+                        dorado: '#D4AF37',
+                        'dorado-oscuro': '#B8860B',
+                        'gris-oscuro': '#111111',
+                        'gris-medio': '#222222',
+                        'gris-borde': '#333333',
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Estilos personalizados obligatorios de tu maqueta */
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        /* Efectos y utilidades extra */
+        .text-shadow {
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+        
+        .section-title::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 3px;
+            background-color: #D4AF37;
+            margin: 10px auto 0;
+        }
+
+        /* Scrollbar oculta pero funcional */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Estilos específicos para inputs del formulario para mantener tu diseño */
+        .custom-input {
+            background-color: #000000;
+            border: 1px solid #333333;
+            color: #ffffff;
+        }
+        .custom-input:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="antialiased">
+
+    <!-- Header -->
+    <header class="bg-negro border-b-2 border-dorado sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex justify-between items-center">
+                <!-- Logo -->
+                <div class="flex items-center cursor-pointer" onclick="goHome()">
+                    <!-- Placeholder para logo -->
+                    <div class="h-12 w-12 bg-gray-800 rounded mr-3 border border-dorado flex items-center justify-center overflow-hidden">
+                        <img src="{% static 'img/logobarbero.jpg' %}" alt="KB" class="w-full h-full object-contain">
+                    </div>
+                    <h1 class="text-dorado text-2xl font-bold">KIING BARBER</h1>
+                </div>
+
+                <script>
+                    function goHome() {
+                        if (window.location.pathname.includes('kingbarber') || window.location.pathname === '/') {
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                        } else {
+                            window.location.href = '{% url "index" %}';
+                        }
+                    }
+                </script>
+
+                <!-- Botón Menú Móvil -->
+                <button id="menu-toggle" class="md:hidden text-dorado text-2xl focus:outline-none">
+                    <i class="fas fa-bars"></i>
+                </button>
+
+                <!-- Navegación Desktop -->
+                <nav id="main-nav" class="hidden md:block absolute md:static top-full left-0 w-full md:w-auto bg-negro md:bg-transparent border-b-2 border-dorado md:border-none p-4 md:p-0 transition-all duration-300">
+                    <ul class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6 text-center">
+                        <li><a href="#horas" class="text-blanco hover:text-dorado font-medium transition-colors">Horarios</a></li>
+                        <li><a href="#galeria" class="text-blanco hover:text-dorado font-medium transition-colors">Galería</a></li>
+                        <li><a href="#barbero" class="text-blanco hover:text-dorado font-medium transition-colors">El Barbero</a></li>
+                        <li><a href="#servicios" class="text-blanco hover:text-dorado font-medium transition-colors">Servicios</a></li>
+                        <li><a href="#reserva" class="text-dorado border border-dorado px-4 py-1 rounded hover:bg-dorado hover:text-negro transition-all font-bold">Reserva</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Footer -->
+    <footer class="bg-gris-oscuro border-t-2 border-dorado py-8 text-center">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col items-center">
+                <img src="{% static 'img/Logo-kingBarber.jpg' %}" onerror="this.style.display='none'" alt="KB" class="w-32 mb-4 rounded">
+                <div class="flex gap-6 mb-6">
+                    <a href="https://www.instagram.com/kiing.barberr?igsh=a2RmczhobGNtZm94" target="_blank" class="text-blanco text-2xl hover:text-dorado transition-colors"><i class="fab fa-instagram"></i></a>
+                    <a href="https://wa.me/+56990910168?text=Hola,%20quiero%20agendar%20una%20hora%20en%20KIING%20BARBER" target="_blank" class="text-blanco text-2xl hover:text-dorado transition-colors"><i class="fab fa-whatsapp"></i></a>
+                </div>
+                <div class="mb-4">
+                    <a href="https://maps.app.goo.gl/8xHeZxFpJ8HptbKKA" target="_blank" class="inline-flex items-center gap-2 bg-dorado text-negro px-4 py-2 rounded font-bold hover:bg-dorado-oscuro transition-colors">
+                        <i class="fas fa-map-marker-alt"></i> Ver Ubicación
+                    </a>
+                </div>
+                <p class="text-gray-500 text-sm">© 2025 KIING BARBER. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Modal para cancelar reserva (Global) -->
+    <div id="cancelModal" class="fixed inset-0 bg-black/90 z-[100] hidden items-center justify-center p-4">
+        <div class="bg-gris-oscuro border-2 border-dorado rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-xl text-dorado font-bold mb-4 text-center">Cancelar Reserva</h3>
+            <form id="cancelForm" class="space-y-4">
+                {% csrf_token %}
+                <div>
+                    <label class="block text-dorado text-sm mb-2">Nombre</label>
+                    <input type="text" id="cancelName" name="nombre" placeholder="Ingresa tu nombre" class="w-full p-3 rounded custom-input bg-[#2d2d2d] text-white border border-gray-600 focus:border-[#cfb53b] focus:outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-dorado text-sm mb-2">Teléfono</label>
+                    <input type="tel" id="cancelPhone" name="telefono" placeholder="Ingresa tu teléfono" class="w-full p-3 rounded custom-input bg-[#2d2d2d] text-white border border-gray-600 focus:border-[#cfb53b] focus:outline-none" required>
+                </div>
+                <div>
+                    <label class="block text-dorado text-sm mb-2">Día de la reserva</label>
+                    <input type="text" id="cancelDate" name="dia" class="w-full p-3 rounded custom-input bg-[#2d2d2d] text-white border border-gray-600 focus:border-[#cfb53b] focus:outline-none" placeholder="Selecciona el día" required>
+                </div>
+                <div>
+                    <label class="block text-dorado text-sm mb-2">Hora de la reserva</label>
+                    <div id="cancelTimeContainer" class="grid grid-cols-3 gap-2">
+                        <!-- Las horas se generarán dinámicamente aquí -->
+                    </div>
+                    <input type="hidden" id="cancelTime" name="hora" required>
+                </div>
+                <div class="flex gap-4 mt-6">
+                    <button type="submit" class="flex-1 bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 shadow-[0_0_15px_rgba(220,38,38,0.4)] transform hover:-translate-y-0.5 transition-all duration-200">Cancelar Reserva</button>
+                    <button type="button" onclick="hideCancelModal()" class="flex-1 bg-gray-700 text-white font-bold py-3 rounded-lg hover:bg-gray-600 transition-colors">Volver</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Global de Mensajes -->
+    <div id="globalMessageModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[110] backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-gris-oscuro p-8 rounded-xl border border-dorado shadow-[0_0_30px_rgba(212,175,55,0.2)] max-w-md w-full mx-4 text-center transform scale-100 transition-transform duration-300">
+            <div id="globalModalIconContainer" class="w-16 h-16 bg-dorado/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i id="globalModalIcon" class="fas fa-check text-3xl text-dorado"></i>
+            </div>
+            <h3 id="globalModalTitle" class="text-2xl font-bold text-white mb-2">Título</h3>
+            <p id="globalModalMessage" class="text-gray-300 mb-6">Mensaje</p>
+            <button onclick="closeGlobalModal()" class="bg-dorado hover:bg-yellow-600 text-negro font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105">
+                Entendido
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Menú Móvil
+        const menuToggle = document.getElementById('menu-toggle');
+        const mainNav = document.getElementById('main-nav');
+        
+        if(menuToggle && mainNav) {
+            menuToggle.addEventListener('click', () => {
+                mainNav.classList.toggle('hidden');
+            });
+
+            // Cerrar menú al hacer click en enlace (móvil)
+            document.querySelectorAll('#main-nav a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (window.innerWidth < 768) {
+                        mainNav.classList.add('hidden');
+                    }
+                });
+            });
+        }
+
+        // Modales Globales
+        function showGlobalModal(title, message, isSuccess = true) {
+            const modal = document.getElementById('globalMessageModal');
+            const modalTitle = document.getElementById('globalModalTitle');
+            const modalMsg = document.getElementById('globalModalMessage');
+            const iconContainer = document.getElementById('globalModalIconContainer');
+            const icon = document.getElementById('globalModalIcon');
+            const contentDiv = modal.querySelector('.bg-gris-oscuro');
+
+            modalTitle.innerText = title;
+            modalMsg.innerText = message;
+
+            if (isSuccess) {
+                icon.className = 'fas fa-check text-3xl text-dorado';
+                iconContainer.className = 'w-16 h-16 bg-dorado/10 rounded-full flex items-center justify-center mx-auto mb-4';
+                contentDiv.classList.remove('border-red-500');
+                contentDiv.classList.add('border-dorado');
+            } else {
+                icon.className = 'fas fa-times text-3xl text-red-500';
+                iconContainer.className = 'w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4';
+                contentDiv.classList.remove('border-dorado');
+                contentDiv.classList.add('border-red-500');
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeGlobalModal() {
+            const modal = document.getElementById('globalMessageModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        // Modales Específicos
+        function showCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            if(modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+        
+        function hideCancelModal() {
+            const modal = document.getElementById('cancelModal');
+            if(modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        // Configuración del calendario para cancelar
+        document.addEventListener('DOMContentLoaded', function() {
+            const cancelDateInput = document.getElementById('cancelDate');
+            const cancelTimeContainer = document.getElementById('cancelTimeContainer');
+            const cancelTimeInput = document.getElementById('cancelTime');
+            
+            if (cancelDateInput) {
+                flatpickr(cancelDateInput, {
+                    locale: "es",
+                    dateFormat: "Y-m-d",
+                    // No restringimos fechas en el modal de cancelación
+                    // para permitir cancelar reservas antiguas o en días bloqueados
+                    onChange: function(selectedDates, dateStr, instance) {
+                        generateCancelTimeSlots(dateStr);
+                    }
+                });
+            }
+
+            function generateCancelTimeSlots(dateStr) {
+                cancelTimeContainer.innerHTML = '';
+                cancelTimeInput.value = '';
+                
+                // Mostramos un rango amplio de horas para permitir cancelar
+                // reservas antiguas o con horarios especiales
+                const startHour = 11;
+                const endHour = 22;
+
+                for (let hour = startHour; hour <= endHour; hour++) {
+                    const timeSlot = `${hour}:00`;
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'p-2 rounded border border-gray-600 text-gray-300 hover:border-[#cfb53b] hover:text-[#cfb53b] transition-colors text-center';
+                    btn.textContent = timeSlot;
+                    
+                    btn.onclick = function() {
+                        // Remover selección previa
+                        document.querySelectorAll('#cancelTimeContainer button').forEach(b => {
+                            b.classList.remove('bg-[#cfb53b]', 'text-black', 'border-[#cfb53b]');
+                            b.classList.add('text-gray-300', 'border-gray-600');
+                        });
+                        
+                        // Seleccionar actual
+                        this.classList.remove('text-gray-300', 'border-gray-600');
+                        this.classList.add('bg-[#cfb53b]', 'text-black', 'border-[#cfb53b]');
+                        
+                        cancelTimeInput.value = timeSlot;
+                    };
+                    
+                    cancelTimeContainer.appendChild(btn);
+                }
+            }
+        });
+
+        document.getElementById('cancelForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+
+            if (!data.hora) {
+                showGlobalModal('Faltan Datos', 'Por favor selecciona una hora', false);
+                return;
+            }
+
+            const btn = this.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = 'Procesando...';
+
+            try {
+                const response = await fetch('/api/reservas/cancelar/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    hideCancelModal();
+                    showGlobalModal('¡Cancelación Exitosa!', 'Tu reserva ha sido cancelada correctamente.', true);
+                    // Recargar después de cerrar el modal de éxito
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showGlobalModal('Error al Cancelar', result.message || 'No se pudo cancelar la reserva', false);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showGlobalModal('Error de Conexión', 'No pudimos conectar con el servidor.', false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

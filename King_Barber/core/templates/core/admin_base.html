@@ -1,0 +1,97 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin - KIING BARBER{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Flatpickr CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        negro: '#000000',
+                        blanco: '#ffffff',
+                        dorado: '#D4AF37',
+                        'dorado-oscuro': '#B8860B',
+                        'gris-oscuro': '#111111',
+                        'gris-medio': '#222222',
+                        'gris-borde': '#333333',
+                    },
+                    fontFamily: {
+                        sans: ['Segoe UI', 'Tahoma', 'Geneva', 'Verdana', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        .custom-input {
+            background-color: #111111;
+            border: 1px solid #333333;
+            color: #ffffff;
+        }
+        .custom-input:focus {
+            outline: none;
+            border-color: #D4AF37;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+
+    <!-- Admin Header -->
+    <header class="bg-gris-oscuro border-b border-dorado sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 bg-negro rounded border border-dorado flex items-center justify-center overflow-hidden">
+                    <img src="{% static 'img/logobarbero.jpg' %}" alt="KB" class="w-full h-full object-contain">
+                </div>
+                <h1 class="text-dorado text-xl font-bold hidden sm:block">PANEL ADMIN</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <a href="{% url 'index' %}" class="text-gray-400 hover:text-white text-sm">
+                    <i class="fas fa-external-link-alt mr-1"></i> Ver Sitio
+                </a>
+                <button id="logout-btn-header" class="text-red-500 hover:text-red-400 text-sm font-bold hidden">
+                    <i class="fas fa-sign-out-alt mr-1"></i> Salir
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gris-oscuro border-t border-gris-borde py-4 mt-auto">
+        <div class="container mx-auto px-4 text-center text-gray-500 text-xs">
+            &copy; {% now "Y" %} King Barber Admin
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
